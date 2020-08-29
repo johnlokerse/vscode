@@ -154,6 +154,17 @@ export async function publishRepository(gitAPI: GitAPI, repository?: Repository)
 	const githubRepository = await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, cancellable: false, title: 'Publish to GitHub' }, async progress => {
 		progress.report({ message: `Publishing to GitHub ${isPrivate ? 'private' : 'public'} repository`, increment: 25 });
 
+		let branchNameOptions: vscode.InputBoxOptions = {
+			prompt: "Label: ",
+			placeHolder: "Specify a branch name"
+		}
+
+		let branchName;
+		vscode.window.showInputBox(branchNameOptions).then(name => {
+			if (!name) return;
+			branchName = name;
+		});
+
 		const res = await octokit.repos.createForAuthenticatedUser({
 			name: repo!,
 			private: isPrivate
@@ -175,7 +186,7 @@ export async function publishRepository(gitAPI: GitAPI, repository?: Repository)
 
 		progress.report({ message: 'Uploading files', increment: 25 });
 		await repository.addRemote('origin', createdGithubRepository.clone_url);
-		await repository.push('origin', 'master', true);
+		await repository.push('origin', branchName, true);
 
 		return createdGithubRepository;
 	});
